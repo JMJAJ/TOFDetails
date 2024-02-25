@@ -1,12 +1,18 @@
+import asyncio
+import io
+import os
+from io import BytesIO
+
+import aiohttp
 import discord
+import requests
 from discord import File
 from discord.ext import commands
-import requests
-from tabulate import tabulate
 from dotenv import load_dotenv
-import asyncio
-import aiohttp
-import io
+from PIL import Image
+from tabulate import tabulate
+
+from keep_alive import keep_alive
 
 load_dotenv()
 
@@ -14,6 +20,8 @@ intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 # link = https://discord.com/oauth2/authorize?client_id=1210764069439668235&permissions=1073817664&scope=bot
+
+keep_alive()
 
 
 @bot.event
@@ -70,7 +78,7 @@ async def help_catto(ctx):
                   value="Displays details about an outfit.",
                   inline=False)
   embed.add_field(name="",
-                  value="Usage: !outfit, outfit [outfit_name]",
+                  value="Usage: outfit [outfit_name], !outfit list",
                   inline=False)
 
   embed.add_field(name="Relic",
@@ -773,13 +781,13 @@ async def format_character_details(character_data):
   formatted_details += f"Weapon Show Picture: [Click Here]({character_data.get('assetsA0', {}).get('weaponShowPicture', 'N/A')})\n"
 
   weapon_info = character_data.get('weapon', {})
-  formatted_details += f"## Weapon:\n"
+  formatted_details += "## Weapon:\n"
   formatted_details += f"- ID: {weapon_info.get('id', 'N/A')}\n"
   formatted_details += f"- Simulacrum ID: {weapon_info.get('simulacrumId', 'N/A')}\n"
   formatted_details += f"- Advance ID: {weapon_info.get('advanceId', 'N/A')}\n"
 
   matrix_info = character_data.get('matrix', {})
-  formatted_details += f"## Matrix:\n"
+  formatted_details += "## Matrix:\n"
   formatted_details += f"- ID: {matrix_info.get('id', 'N/A')}\n"
   formatted_details += f"- Name: {matrix_info.get('name', 'N/A')}\n"
   formatted_details += f"- Version: {matrix_info.get('version', 'N/A')}\n"
@@ -856,9 +864,8 @@ async def outfit(ctx, *, name=None):
         outfit_data = await response.json()
         outfit_names = [outfit['name'] for outfit in outfit_data]
 
-        if not name:
+        if not name or name.lower() == 'list':
           paginated_outfits = paginate(outfit_names, 10)
-
           current_page = 1
           total_pages = len(paginated_outfits)
 
@@ -882,9 +889,54 @@ async def send_outfit_details(ctx, outfit):
                   value=outfit['description'],
                   inline=False)
   embed.add_field(name="Source", value=outfit['source'], inline=False)
-  embed.set_image(url=outfit['icon'])
 
-  await ctx.send(embed=embed)
+  if outfit['type'] == "Dress" or outfit['type'] == "Outfit":
+    combined_image_url = await combine_images(ctx, outfit['icon'])
+    embed.set_image(url=combined_image_url)
+    await ctx.send(embed=embed)
+  else:
+    embed.set_image(url=outfit['icon'])
+    await ctx.send(embed=embed)
+
+
+# hate this xdd
+async def combine_images(ctx, outfit_icon_url):
+  response = requests.get(outfit_icon_url)
+  if response.status_code == 200:
+    outfit_icon = Image.open(BytesIO(response.content))
+    male_icon_url = outfit_icon_url.replace("fashion_f", "fashion_m")
+    response = requests.get(male_icon_url)
+    if response.status_code == 200:
+      male_icon = Image.open(BytesIO(response.content))
+
+      # Calculate the dimensions of the combined image
+      combined_width = outfit_icon.width + male_icon.width
+      combined_height = max(outfit_icon.height, male_icon.height)
+
+      # Create a new blank image with the calculated dimensions
+      combined_image = Image.new("RGBA", (combined_width, combined_height))
+
+      # Paste the outfit and male icons onto the new image
+      combined_image.paste(outfit_icon, (0, 0))
+      combined_image.paste(male_icon, (outfit_icon.width, 0))
+
+      # Save combined image locally
+      combined_image_path = "combined_image.png"
+      combined_image.save(combined_image_path)
+
+      # Upload combined image to Discord
+      with open(combined_image_path, "rb") as file:
+        combined_image_file = discord.File(file)
+        combined_message = await ctx.send(file=combined_image_file)
+        await asyncio.sleep(0.1)  # Delay for 0.1 seconds
+        await combined_message.delete()
+
+      # Delete the image file from the local machine
+      os.remove(combined_image_path)
+
+      return combined_message.attachments[0].url
+
+  return None
 
 
 def paginate(items, items_per_page):
@@ -1273,4 +1325,4 @@ def format_achievement_details(achievement_data):
   return formatted_details
 
 
-bot.run("YOUR TOKEN")
+bot.run("TOKEN")
