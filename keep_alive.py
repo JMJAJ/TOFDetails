@@ -6,9 +6,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return '''<body style="margin: 0; padding: 0;">
-    <iframe width="100%" height="100%" src="https://axocoder.vercel.app/" frameborder="0" allowfullscreen></iframe>
-  </body>'''
+    return "Hi, Im alive"
 
 
 def run():
