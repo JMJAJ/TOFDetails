@@ -79,7 +79,7 @@ async def help_catto(ctx):
                     value="Displays details about an outfit.",
                     inline=False)
     embed.add_field(name="",
-                    value="Usage: outfit [outfit_name], !outfit list",
+                    value="Usage: !outfit [outfit_name], !outfit list",
                     inline=False)
 
     embed.add_field(name="Relic",
@@ -1354,4 +1354,4 @@ def format_achievement_details(achievement_data):
     return formatted_details
 
 
-bot.run("TOKEN")
+bot.run("")
