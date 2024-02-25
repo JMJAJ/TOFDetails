@@ -1,24 +1,24 @@
+from flask import Flask, render_template
 from threading import Thread
 
-from flask import Flask, jsonify
+app = Flask(__name__)
 
-app = Flask('')
 
 @app.route('/')
-def home():
-    return "Hello. I am alive!"
+def index():
+    return '''<body style="margin: 0; padding: 0;">
+    <iframe width="100%" height="100%" src="https://axocoder.vercel.app/" frameborder="0" allowfullscreen></iframe>
+  </body>'''
 
-@app.route('/api/status')
-def api_status():
-    return jsonify({"status": "alive"})
 
 def run():
     app.run(host='0.0.0.0', port=8080)
-    print("Discord Bot URL:", "https://DiscordBot.karendomalesa23.repl.co")
+
 
 def keep_alive():
     t = Thread(target=run)
     t.start()
 
-# Start the Flask application
+
 keep_alive()
+print("Server Running.. Jxint")
