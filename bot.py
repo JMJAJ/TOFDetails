@@ -1273,5 +1273,4 @@ def format_achievement_details(achievement_data):
   return formatted_details
 
 
-bot.run(
-    "MTIxMDc2NDA2OTQzOTY2ODIzNQ.GiUXzl.PwAJTpqsQXJLod9GRzqqoek-IwWiLz6cw9xx4o")
+bot.run("YOUR TOKEN")
